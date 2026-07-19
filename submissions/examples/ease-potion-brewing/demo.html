@@ -1,0 +1,406 @@
+<!-- demo.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Potion Brewing – EaseMotion CSS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="demo-wrapper">
+    <h1>🧪 Potion Brewing</h1>
+    <p class="subtitle">Potion bubbling with color changes</p>
+
+    <div class="pb-container">
+      <div class="pb-scene">
+        <!-- Background -->
+        <div class="bg-gradient"></div>
+
+        <!-- Potion -->
+        <div class="potion">
+          <!-- Potion flask -->
+          <div class="flask">
+            <!-- Flask body -->
+            <div class="flask-body">
+              <!-- Flask glass effect -->
+              <div class="flask-glass"></div>
+              
+              <!-- Potion liquid -->
+              <div class="potion-liquid" id="potionLiquid">
+                <div class="liquid-color"></div>
+                <div class="liquid-surface"></div>
+                
+                <!-- Bubbles -->
+                <div class="bubble b1"></div>
+                <div class="bubble b2"></div>
+                <div class="bubble b3"></div>
+                <div class="bubble b4"></div>
+                <div class="bubble b5"></div>
+                <div class="bubble b6"></div>
+                <div class="bubble b7"></div>
+                <div class="bubble b8"></div>
+                <div class="bubble b9"></div>
+                <div class="bubble b10"></div>
+                <div class="bubble b11"></div>
+                <div class="bubble b12"></div>
+                <div class="bubble b13"></div>
+                <div class="bubble b14"></div>
+                <div class="bubble b15"></div>
+                <div class="bubble b16"></div>
+                <div class="bubble b17"></div>
+                <div class="bubble b18"></div>
+                <div class="bubble b19"></div>
+                <div class="bubble b20"></div>
+              </div>
+
+              <!-- Flask neck -->
+              <div class="flask-neck"></div>
+
+              <!-- Flask rim -->
+              <div class="flask-rim"></div>
+
+              <!-- Cork -->
+              <div class="cork"></div>
+            </div>
+
+            <!-- Flask glow -->
+            <div class="flask-glow"></div>
+
+            <!-- Steam particles -->
+            <div class="steam s1"></div>
+            <div class="steam s2"></div>
+            <div class="steam s3"></div>
+            <div class="steam s4"></div>
+            <div class="steam s5"></div>
+            <div class="steam s6"></div>
+            <div class="steam s7"></div>
+            <div class="steam s8"></div>
+
+            <!-- Sparkle particles -->
+            <div class="sparkle sp1"></div>
+            <div class="sparkle sp2"></div>
+            <div class="sparkle sp3"></div>
+            <div class="sparkle sp4"></div>
+            <div class="sparkle sp5"></div>
+            <div class="sparkle sp6"></div>
+            <div class="sparkle sp7"></div>
+            <div class="sparkle sp8"></div>
+            <div class="sparkle sp9"></div>
+            <div class="sparkle sp10"></div>
+          </div>
+
+          <!-- Potion label -->
+          <div class="potion-label" id="potionLabel">✨ Potion</div>
+
+          <!-- Color indicator -->
+          <div class="color-indicator">
+            <span class="color-dot" id="colorDot"></span>
+            <span class="color-name" id="colorName">Purple</span>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="potion-controls">
+          <button id="brewBtn">⚗️ Brew</button>
+          <button id="changeColorBtn">🎨 Change Color</button>
+          <button id="resetBtn">⟳ Reset</button>
+          <label>
+            Brew Speed
+            <input type="range" id="speedControl" min="0.3" max="3" step="0.1" value="1" />
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const potionLiquid = document.getElementById('potionLiquid');
+      const liquidColor = document.querySelector('.liquid-color');
+      const liquidSurface = document.querySelector('.liquid-surface');
+      const flaskGlow = document.querySelector('.flask-glow');
+      const potionLabel = document.getElementById('potionLabel');
+      const colorDot = document.getElementById('colorDot');
+      const colorName = document.getElementById('colorName');
+      const bubbles = document.querySelectorAll('.bubble');
+      const steam = document.querySelectorAll('.steam');
+      const sparkles = document.querySelectorAll('.sparkle');
+      const cork = document.querySelector('.cork');
+
+      const brewBtn = document.getElementById('brewBtn');
+      const changeColorBtn = document.getElementById('changeColorBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const speedInput = document.getElementById('speedControl');
+
+      let speedMultiplier = 1;
+      let isBrewing = false;
+      let animationFrame = null;
+      let lastTimestamp = 0;
+      let currentColorIndex = 0;
+
+      const colors = [
+        { name: 'Purple', hex: '#8a5acc', glow: 'rgba(138, 90, 204, 0.15)' },
+        { name: 'Blue', hex: '#4a8acc', glow: 'rgba(74, 138, 204, 0.15)' },
+        { name: 'Green', hex: '#4acc6a', glow: 'rgba(74, 204, 106, 0.15)' },
+        { name: 'Red', hex: '#cc4a4a', glow: 'rgba(204, 74, 74, 0.15)' },
+        { name: 'Gold', hex: '#ccaa4a', glow: 'rgba(204, 170, 74, 0.15)' },
+        { name: 'Pink', hex: '#cc4a8a', glow: 'rgba(204, 74, 138, 0.15)' },
+        { name: 'Cyan', hex: '#4acccc', glow: 'rgba(74, 204, 204, 0.15)' },
+        { name: 'Orange', hex: '#cc7a4a', glow: 'rgba(204, 122, 74, 0.15)' }
+      ];
+
+      // ----- Apply speed -----
+      function applySpeed() {
+        // Bubbles
+        bubbles.forEach((b, i) => {
+          const duration = (1.5 + (i % 4) * 0.3) / speedMultiplier;
+          b.style.setProperty('--bubble-duration', duration + 's');
+          b.style.setProperty('--bubble-delay', ((i * 0.05) / speedMultiplier) + 's');
+        });
+
+        // Steam
+        steam.forEach((s, i) => {
+          const duration = (2 + i * 0.2) / speedMultiplier;
+          s.style.setProperty('--steam-duration', duration + 's');
+          s.style.setProperty('--steam-delay', ((i * 0.05) / speedMultiplier) + 's');
+        });
+
+        // Sparkles
+        sparkles.forEach((sp, i) => {
+          const duration = (1.2 + (i % 3) * 0.2) / speedMultiplier;
+          sp.style.setProperty('--sparkle-duration', duration + 's');
+          sp.style.setProperty('--sparkle-delay', ((i * 0.03) / speedMultiplier) + 's');
+        });
+
+        // Cork
+        cork.style.setProperty('--cork-duration', (0.4 / speedMultiplier) + 's');
+
+        // Flask glow
+        flaskGlow.style.setProperty('--glow-duration', (1.5 / speedMultiplier) + 's');
+      }
+
+      // ----- Change color -----
+      function changeColor() {
+        currentColorIndex = (currentColorIndex + 1) % colors.length;
+        const color = colors[currentColorIndex];
+        
+        // Update liquid
+        liquidColor.style.background = `radial-gradient(ellipse at 50% 40%, 
+          ${color.hex}88 0%, 
+          ${color.hex}66 30%, 
+          ${color.hex}44 60%, 
+          ${color.hex}22 80%, 
+          ${color.hex}11 100%
+        )`;
+        
+        // Update glow
+        flaskGlow.style.background = `radial-gradient(circle at center, 
+          ${color.glow} 0%, 
+          ${color.glow} 30%, 
+          transparent 70%
+        )`;
+        flaskGlow.style.setProperty('--glow-color', color.glow);
+
+        // Update label
+        potionLabel.textContent = `✨ ${color.name} Potion`;
+        colorDot.style.background = color.hex;
+        colorDot.style.boxShadow = `0 0 20px ${color.hex}44`;
+        colorName.textContent = color.name;
+
+        // Trigger sparkle burst
+        sparkles.forEach((sp, i) => {
+          sp.style.opacity = '0';
+          sp.style.transform = 'scale(0)';
+          setTimeout(() => {
+            sp.style.opacity = '0.8';
+            sp.style.transform = 'scale(1)';
+            setTimeout(() => {
+              sp.style.opacity = '0';
+              sp.style.transform = 'scale(0)';
+            }, 800 / speedMultiplier);
+          }, i * 50 / speedMultiplier);
+        });
+
+        changeColorBtn.textContent = '🎨 Changing...';
+        setTimeout(() => {
+          changeColorBtn.textContent = '🎨 Change Color';
+        }, 500 / speedMultiplier);
+      }
+
+      // ----- Brew potion -----
+      function brewPotion() {
+        if (isBrewing) return;
+        isBrewing = true;
+
+        // Cork pops
+        cork.classList.add('pop');
+        setTimeout(() => {
+          cork.classList.remove('pop');
+        }, 400 / speedMultiplier);
+
+        // Intensify bubbles
+        bubbles.forEach((b) => {
+          const scale = 1 + Math.random() * 0.5;
+          b.style.transform = `scale(${scale})`;
+          setTimeout(() => {
+            b.style.transform = 'scale(1)';
+          }, 500 / speedMultiplier);
+        });
+
+        // Steam burst
+        steam.forEach((s) => {
+          s.style.opacity = '0.6';
+          setTimeout(() => {
+            s.style.opacity = '0.1';
+          }, 800 / speedMultiplier);
+        });
+
+        // Glow flash
+        flaskGlow.style.opacity = '0.8';
+        setTimeout(() => {
+          flaskGlow.style.opacity = '0.3';
+        }, 400 / speedMultiplier);
+
+        // Liquid surface ripple
+        liquidSurface.style.transform = 'scaleX(1.1) scaleY(1.05)';
+        setTimeout(() => {
+          liquidSurface.style.transform = 'scaleX(1) scaleY(1)';
+        }, 400 / speedMultiplier);
+
+        brewBtn.textContent = '⚗️ Brewing...';
+        setTimeout(() => {
+          brewBtn.textContent = '⚗️ Brew';
+          isBrewing = false;
+        }, 800 / speedMultiplier);
+
+        // Auto-change color on brew
+        setTimeout(() => {
+          changeColor();
+        }, 300 / speedMultiplier);
+      }
+
+      // ----- Reset -----
+      function resetPotion() {
+        if (isBrewing) {
+          isBrewing = false;
+        }
+
+        currentColorIndex = 0;
+        const color = colors[0];
+        
+        liquidColor.style.background = `radial-gradient(ellipse at 50% 40%, 
+          ${color.hex}88 0%, 
+          ${color.hex}66 30%, 
+          ${color.hex}44 60%, 
+          ${color.hex}22 80%, 
+          ${color.hex}11 100%
+        )`;
+        
+        flaskGlow.style.background = `radial-gradient(circle at center, 
+          ${color.glow} 0%, 
+          ${color.glow} 30%, 
+          transparent 70%
+        )`;
+        flaskGlow.style.setProperty('--glow-color', color.glow);
+
+        potionLabel.textContent = `✨ ${color.name} Potion`;
+        colorDot.style.background = color.hex;
+        colorDot.style.boxShadow = `0 0 20px ${color.hex}44`;
+        colorName.textContent = color.name;
+
+        cork.classList.remove('pop');
+        liquidSurface.style.transform = 'scaleX(1) scaleY(1)';
+        flaskGlow.style.opacity = '0.3';
+        steam.forEach(s => s.style.opacity = '0.1');
+        bubbles.forEach(b => b.style.transform = 'scale(1)');
+        sparkles.forEach(sp => {
+          sp.style.opacity = '0';
+          sp.style.transform = 'scale(0)';
+        });
+
+        brewBtn.textContent = '⚗️ Brew';
+        changeColorBtn.textContent = '🎨 Change Color';
+        lastTimestamp = 0;
+      }
+
+      // ----- Update speed -----
+      function updateSpeed(value) {
+        speedMultiplier = parseFloat(value);
+        applySpeed();
+      }
+
+      // ----- Animation loop -----
+      function animate(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const deltaTime = Math.min((timestamp - lastTimestamp) / 16.67, 3);
+        lastTimestamp = timestamp;
+
+        // Liquid surface gentle wave
+        const wave = Math.sin(timestamp / 2000) * 0.02 + 0.98;
+        liquidSurface.style.transform = `scaleX(${wave}) scaleY(${0.98 + (1 - wave) * 0.5})`;
+
+        // Floating sparkles
+        sparkles.forEach((sp, i) => {
+          if (sp.style.opacity === '0' || parseFloat(sp.style.opacity) === 0) {
+            const delay = (i * 200 + 1000) / speedMultiplier;
+            setTimeout(() => {
+              sp.style.opacity = '0.5';
+              sp.style.transform = 'scale(1)';
+              setTimeout(() => {
+                sp.style.opacity = '0';
+                sp.style.transform = 'scale(0)';
+              }, 600 / speedMultiplier);
+            }, delay);
+          }
+        });
+
+        animationFrame = requestAnimationFrame(animate);
+      }
+
+      // ----- Init -----
+      function init() {
+        resetPotion();
+
+        applySpeed();
+
+        // Start animation
+        lastTimestamp = 0;
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        animationFrame = requestAnimationFrame(animate);
+
+        // Auto-brew after 1.5 seconds
+        setTimeout(() => {
+          brewPotion();
+        }, 1500);
+
+        // Auto-brew again
+        setTimeout(() => {
+          brewPotion();
+        }, 4000);
+
+        // Auto-brew again
+        setTimeout(() => {
+          brewPotion();
+        }, 6500);
+      }
+
+      // ----- Event listeners -----
+      brewBtn.addEventListener('click', brewPotion);
+      changeColorBtn.addEventListener('click', changeColor);
+      resetBtn.addEventListener('click', resetPotion);
+      speedInput.addEventListener('input', function() {
+        updateSpeed(this.value);
+      });
+
+      window.addEventListener('beforeunload', function() {
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+      });
+
+      init();
+    })();
+  </script>
+
+</body>
+</html>
