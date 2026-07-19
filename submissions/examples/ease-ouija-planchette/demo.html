@@ -1,0 +1,407 @@
+<!-- demo.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ouija Planchette – EaseMotion CSS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="demo-wrapper">
+    <h1>🔮 Ouija Planchette</h1>
+    <p class="subtitle">Planchette moving on board</p>
+
+    <div class="op-container">
+      <div class="op-scene">
+        <!-- Background -->
+        <div class="bg-gradient"></div>
+
+        <!-- Ouija Board -->
+        <div class="ouija-board">
+          <!-- Board wood texture -->
+          <div class="board-texture"></div>
+
+          <!-- Board border -->
+          <div class="board-border">
+            <div class="board-corner bc-tl"></div>
+            <div class="board-corner bc-tr"></div>
+            <div class="board-corner bc-bl"></div>
+            <div class="board-corner bc-br"></div>
+          </div>
+
+          <!-- Title -->
+          <div class="board-title">OUIJA</div>
+          <div class="board-subtitle">~ Mystifying Oracle ~</div>
+
+          <!-- Letters A-Z -->
+          <div class="letter-grid">
+            <div class="letter">A</div>
+            <div class="letter">B</div>
+            <div class="letter">C</div>
+            <div class="letter">D</div>
+            <div class="letter">E</div>
+            <div class="letter">F</div>
+            <div class="letter">G</div>
+            <div class="letter">H</div>
+            <div class="letter">I</div>
+            <div class="letter">J</div>
+            <div class="letter">K</div>
+            <div class="letter">L</div>
+            <div class="letter">M</div>
+            <div class="letter">N</div>
+            <div class="letter">O</div>
+            <div class="letter">P</div>
+            <div class="letter">Q</div>
+            <div class="letter">R</div>
+            <div class="letter">S</div>
+            <div class="letter">T</div>
+            <div class="letter">U</div>
+            <div class="letter">V</div>
+            <div class="letter">W</div>
+            <div class="letter">X</div>
+            <div class="letter">Y</div>
+            <div class="letter">Z</div>
+          </div>
+
+          <!-- Numbers 1-9, 0 -->
+          <div class="number-row">
+            <div class="number">1</div>
+            <div class="number">2</div>
+            <div class="number">3</div>
+            <div class="number">4</div>
+            <div class="number">5</div>
+            <div class="number">6</div>
+            <div class="number">7</div>
+            <div class="number">8</div>
+            <div class="number">9</div>
+            <div class="number">0</div>
+          </div>
+
+          <!-- Corner symbols -->
+          <div class="corner-symbol cs-tl">☀</div>
+          <div class="corner-symbol cs-tr">☽</div>
+          <div class="corner-symbol cs-bl">★</div>
+          <div class="corner-symbol cs-br">✦</div>
+
+          <!-- "Yes" and "No" -->
+          <div class="answer answer-yes">YES</div>
+          <div class="answer answer-no">NO</div>
+
+          <!-- "Goodbye" -->
+          <div class="goodbye">GOODBYE</div>
+
+          <!-- Planchette -->
+          <div class="planchette" id="planchette">
+            <div class="planchette-body">
+              <div class="planchette-point"></div>
+              <div class="planchette-hole hole-1"></div>
+              <div class="planchette-hole hole-2"></div>
+            </div>
+            <div class="planchette-glow"></div>
+            <div class="planchette-trail"></div>
+          </div>
+
+          <!-- Highlighted letter indicator -->
+          <div class="highlight-ring" id="highlightRing"></div>
+
+          <!-- Board glow -->
+          <div class="board-glow"></div>
+        </div>
+
+        <!-- Message display -->
+        <div class="message-display" id="messageDisplay">
+          <span class="message-text" id="messageText">⚡</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="moveBtn">🔮 Move Planchette</button>
+      <button id="resetBtn">⟳ Reset</button>
+      <label>
+        Movement Speed
+        <input type="range" id="speedControl" min="0.3" max="3" step="0.1" value="1" />
+      </label>
+      <label>
+        Glow Intensity
+        <input type="range" id="intensityControl" min="0.3" max="2" step="0.05" value="1" />
+      </label>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const planchette = document.getElementById('planchette');
+      const highlightRing = document.getElementById('highlightRing');
+      const messageText = document.getElementById('messageText');
+      const boardGlow = document.querySelector('.board-glow');
+
+      const moveBtn = document.getElementById('moveBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const speedInput = document.getElementById('speedControl');
+      const intensityInput = document.getElementById('intensityControl');
+
+      let speedMultiplier = 1;
+      let intensityMultiplier = 1;
+      let isMoving = false;
+      let animationFrame = null;
+      let lastTimestamp = 0;
+      let messageQueue = [];
+      let currentMessage = '';
+
+      // Letters and positions on board
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      const numbers = '0123456789'.split('');
+      const specials = ['YES', 'NO', 'GOODBYE'];
+
+      // Pre-defined messages to spell out
+      const messages = [
+        'HELLO',
+        'GOODBYE',
+        'YES',
+        'NO',
+        'HELP',
+        'LOVE',
+        'DREAM',
+        'STAR',
+        'MOON',
+        'SUN',
+        'FIRE',
+        'WATER',
+        'EARTH',
+        'WIND',
+        'SOUL',
+        'LIGHT',
+        'DARK',
+        'PEACE',
+        'HOPE',
+        'FAITH'
+      ];
+
+      // ----- Apply speed -----
+      function applySpeed() {
+        planchette.style.setProperty('--move-duration', (0.8 / speedMultiplier) + 's');
+        highlightRing.style.setProperty('--highlight-duration', (0.5 / speedMultiplier) + 's');
+        boardGlow.style.setProperty('--glow-duration', (2 / speedMultiplier) + 's');
+      }
+
+      // ----- Apply intensity -----
+      function applyIntensity() {
+        const glowOpacity = Math.min(0.15 * intensityMultiplier, 0.3);
+        boardGlow.style.setProperty('--glow-intensity', glowOpacity);
+        const glowSize = 400 * intensityMultiplier;
+        boardGlow.style.setProperty('--glow-size', glowSize + 'px');
+
+        const planchetteGlow = document.querySelector('.planchette-glow');
+        if (planchetteGlow) {
+          const opacity = Math.min(0.3 * intensityMultiplier, 0.6);
+          planchetteGlow.style.opacity = opacity;
+          const size = 60 * intensityMultiplier;
+          planchetteGlow.style.setProperty('--planchette-glow-size', size + 'px');
+        }
+      }
+
+      // ----- Get position for letter -----
+      function getLetterPosition(letter) {
+        // Letter positions on the board (approximate)
+        const positions = {
+          'A': { x: 15, y: 28 },
+          'B': { x: 25, y: 28 },
+          'C': { x: 35, y: 28 },
+          'D': { x: 45, y: 28 },
+          'E': { x: 55, y: 28 },
+          'F': { x: 65, y: 28 },
+          'G': { x: 75, y: 28 },
+          'H': { x: 85, y: 28 },
+          'I': { x: 15, y: 38 },
+          'J': { x: 25, y: 38 },
+          'K': { x: 35, y: 38 },
+          'L': { x: 45, y: 38 },
+          'M': { x: 55, y: 38 },
+          'N': { x: 65, y: 38 },
+          'O': { x: 75, y: 38 },
+          'P': { x: 85, y: 38 },
+          'Q': { x: 15, y: 48 },
+          'R': { x: 25, y: 48 },
+          'S': { x: 35, y: 48 },
+          'T': { x: 45, y: 48 },
+          'U': { x: 55, y: 48 },
+          'V': { x: 65, y: 48 },
+          'W': { x: 75, y: 48 },
+          'X': { x: 85, y: 48 },
+          'Y': { x: 15, y: 58 },
+          'Z': { x: 25, y: 58 },
+          'YES': { x: 20, y: 75 },
+          'NO': { x: 80, y: 75 },
+          'GOODBYE': { x: 50, y: 85 }
+        };
+        return positions[letter] || { x: 50, y: 50 };
+      }
+
+      // ----- Move planchette to position -----
+      function moveTo(position, callback) {
+        const x = position.x;
+        const y = position.y;
+
+        planchette.style.left = x + '%';
+        planchette.style.top = y + '%';
+        planchette.style.transform = 'translate(-50%, -50%) scale(1)';
+
+        // Highlight ring
+        highlightRing.style.left = x + '%';
+        highlightRing.style.top = y + '%';
+        highlightRing.style.opacity = '0.8';
+        highlightRing.style.transform = 'translate(-50%, -50%) scale(1)';
+
+        setTimeout(() => {
+          highlightRing.style.opacity = '0';
+        }, 500 / speedMultiplier);
+
+        if (callback) {
+          setTimeout(callback, 800 / speedMultiplier);
+        }
+      }
+
+      // ----- Spell a message -----
+      function spellMessage(message) {
+        if (isMoving) return;
+        isMoving = true;
+
+        const chars = message.split('');
+        let index = 0;
+        let currentMessage = '';
+
+        moveBtn.textContent = '🔮 Communicating...';
+
+        function nextChar() {
+          if (index >= chars.length) {
+            // Done
+            isMoving = false;
+            moveBtn.textContent = '🔮 Move Planchette';
+            messageText.textContent = '✨ ' + message + ' ✨';
+            return;
+          }
+
+          const char = chars[index];
+          const pos = getLetterPosition(char);
+
+          if (pos) {
+            moveTo(pos, () => {
+              currentMessage += char;
+              messageText.textContent = currentMessage;
+              index++;
+              setTimeout(nextChar, 300 / speedMultiplier);
+            });
+          } else {
+            index++;
+            setTimeout(nextChar, 100 / speedMultiplier);
+          }
+        }
+
+        setTimeout(nextChar, 500 / speedMultiplier);
+      }
+
+      // ----- Random movement -----
+      function randomMove() {
+        if (isMoving) return;
+
+        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        spellMessage(randomMessage);
+      }
+
+      // ----- Reset -----
+      function resetPlanchette() {
+        if (isMoving) return;
+
+        planchette.style.left = '50%';
+        planchette.style.top = '50%';
+        planchette.style.transform = 'translate(-50%, -50%) scale(1)';
+        highlightRing.style.opacity = '0';
+        messageText.textContent = '⚡';
+        moveBtn.textContent = '🔮 Move Planchette';
+        isMoving = false;
+        lastTimestamp = 0;
+      }
+
+      // ----- Update speed -----
+      function updateSpeed(value) {
+        speedMultiplier = parseFloat(value);
+        applySpeed();
+      }
+
+      // ----- Update intensity -----
+      function updateIntensity(value) {
+        intensityMultiplier = parseFloat(value);
+        applyIntensity();
+      }
+
+      // ----- Animation loop -----
+      function animate(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const deltaTime = Math.min((timestamp - lastTimestamp) / 16.67, 3);
+        lastTimestamp = timestamp;
+
+        // Planchette subtle float
+        if (!isMoving) {
+          const floatY = Math.sin(timestamp / 2000) * 2;
+          const floatX = Math.cos(timestamp / 2500) * 1;
+          const rotation = Math.sin(timestamp / 3000) * 0.5;
+          planchette.style.transform = `translate(-50%, -50%) translate(${floatX}px, ${floatY}px) rotate(${rotation}deg) scale(1)`;
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+      }
+
+      // ----- Init -----
+      function init() {
+        resetPlanchette();
+
+        applySpeed();
+        applyIntensity();
+
+        // Start animation
+        lastTimestamp = 0;
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        animationFrame = requestAnimationFrame(animate);
+
+        // Auto-move after 1.5 seconds
+        setTimeout(() => {
+          spellMessage('HELLO');
+        }, 1500);
+
+        // Auto-move again after 4 seconds
+        setTimeout(() => {
+          spellMessage('GOODBYE');
+        }, 5500);
+
+        // Auto-move again after 8 seconds
+        setTimeout(() => {
+          spellMessage('LIGHT');
+        }, 9500);
+      }
+
+      // ----- Event listeners -----
+      moveBtn.addEventListener('click', randomMove);
+      resetBtn.addEventListener('click', resetPlanchette);
+      speedInput.addEventListener('input', function() {
+        updateSpeed(this.value);
+      });
+      intensityInput.addEventListener('input', function() {
+        updateIntensity(this.value);
+      });
+
+      // Click on board to move
+      document.querySelector('.ouija-board').addEventListener('click', randomMove);
+
+      window.addEventListener('beforeunload', function() {
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+      });
+
+      init();
+    })();
+  </script>
+
+</body>
+</html>
