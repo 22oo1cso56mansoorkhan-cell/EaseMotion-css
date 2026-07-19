@@ -1,0 +1,382 @@
+<!-- demo.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smudge Stick Smoke – EaseMotion CSS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="demo-wrapper">
+    <h1>🪴 Smudge Stick Smoke</h1>
+    <p class="subtitle">Sage smoke with swirling patterns</p>
+
+    <div class="ss-container">
+      <div class="ss-scene">
+        <!-- Background -->
+        <div class="bg-gradient"></div>
+
+        <!-- Smudge Stick -->
+        <div class="smudge-stick">
+          <!-- Stick base -->
+          <div class="stick-base"></div>
+
+          <!-- Stick body (sage bundle) -->
+          <div class="stick-body">
+            <div class="stick-texture"></div>
+            <div class="stick-wrap wrap-1"></div>
+            <div class="stick-wrap wrap-2"></div>
+            <div class="stick-wrap wrap-3"></div>
+          </div>
+
+          <!-- Ember glow -->
+          <div class="ember-glow"></div>
+
+          <!-- Smoke particles -->
+          <div class="smoke-particle sp1"></div>
+          <div class="smoke-particle sp2"></div>
+          <div class="smoke-particle sp3"></div>
+          <div class="smoke-particle sp4"></div>
+          <div class="smoke-particle sp5"></div>
+          <div class="smoke-particle sp6"></div>
+          <div class="smoke-particle sp7"></div>
+          <div class="smoke-particle sp8"></div>
+          <div class="smoke-particle sp9"></div>
+          <div class="smoke-particle sp10"></div>
+          <div class="smoke-particle sp11"></div>
+          <div class="smoke-particle sp12"></div>
+          <div class="smoke-particle sp13"></div>
+          <div class="smoke-particle sp14"></div>
+          <div class="smoke-particle sp15"></div>
+          <div class="smoke-particle sp16"></div>
+          <div class="smoke-particle sp17"></div>
+          <div class="smoke-particle sp18"></div>
+          <div class="smoke-particle sp19"></div>
+          <div class="smoke-particle sp20"></div>
+          <div class="smoke-particle sp21"></div>
+          <div class="smoke-particle sp22"></div>
+          <div class="smoke-particle sp23"></div>
+          <div class="smoke-particle sp24"></div>
+          <div class="smoke-particle sp25"></div>
+          <div class="smoke-particle sp26"></div>
+          <div class="smoke-particle sp27"></div>
+          <div class="smoke-particle sp28"></div>
+          <div class="smoke-particle sp29"></div>
+          <div class="smoke-particle sp30"></div>
+
+          <!-- Smoke trails -->
+          <div class="smoke-trail st1"></div>
+          <div class="smoke-trail st2"></div>
+          <div class="smoke-trail st3"></div>
+          <div class="smoke-trail st4"></div>
+          <div class="smoke-trail st5"></div>
+          <div class="smoke-trail st6"></div>
+
+          <!-- Ambient glow -->
+          <div class="ambient-glow"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="burnBtn">🔥 Burn Sage</button>
+      <button id="resetBtn">⟳ Reset</button>
+      <label>
+        Smoke Speed
+        <input type="range" id="speedControl" min="0.3" max="3" step="0.1" value="1" />
+      </label>
+      <label>
+        Smoke Density
+        <input type="range" id="densityControl" min="0.3" max="2" step="0.05" value="1" />
+      </label>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const smokeParticles = document.querySelectorAll('.smoke-particle');
+      const smokeTrails = document.querySelectorAll('.smoke-trail');
+      const emberGlow = document.querySelector('.ember-glow');
+      const ambientGlow = document.querySelector('.ambient-glow');
+      const stickBody = document.querySelector('.stick-body');
+
+      const burnBtn = document.getElementById('burnBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const speedInput = document.getElementById('speedControl');
+      const densityInput = document.getElementById('densityControl');
+
+      let speedMultiplier = 1;
+      let densityMultiplier = 1;
+      let isBurning = false;
+      let animationFrame = null;
+      let lastTimestamp = 0;
+      let smokePhase = 0;
+
+      // ----- Apply speed -----
+      function applySpeed() {
+        // Smoke particles
+        smokeParticles.forEach((p, i) => {
+          const duration = (3 + (i % 5) * 0.4) / speedMultiplier;
+          p.style.setProperty('--smoke-duration', duration + 's');
+          p.style.setProperty('--smoke-delay', ((i * 0.05) / speedMultiplier) + 's');
+        });
+
+        // Smoke trails
+        smokeTrails.forEach((trail, i) => {
+          const duration = (2.5 + i * 0.2) / speedMultiplier;
+          trail.style.setProperty('--trail-duration', duration + 's');
+          trail.style.setProperty('--trail-delay', ((i * 0.08) / speedMultiplier) + 's');
+        });
+
+        // Ember glow
+        emberGlow.style.setProperty('--ember-duration', (1.2 / speedMultiplier) + 's');
+
+        // Ambient glow
+        ambientGlow.style.setProperty('--ambient-duration', (3 / speedMultiplier) + 's');
+      }
+
+      // ----- Apply density -----
+      function applyDensity() {
+        // Smoke particles
+        smokeParticles.forEach((p) => {
+          const size = 4 * densityMultiplier;
+          p.style.setProperty('--smoke-size', size + 'px');
+          const opacity = Math.min(0.15 * densityMultiplier, 0.3);
+          p.style.setProperty('--smoke-opacity', opacity);
+        });
+
+        // Smoke trails
+        smokeTrails.forEach((trail) => {
+          const opacity = Math.min(0.04 * densityMultiplier, 0.08);
+          trail.style.setProperty('--trail-opacity', opacity);
+          const width = 2 * densityMultiplier;
+          trail.style.setProperty('--trail-width', width + 'px');
+        });
+
+        // Ambient glow
+        const glowOpacity = Math.min(0.05 * densityMultiplier, 0.1);
+        ambientGlow.style.setProperty('--ambient-intensity', glowOpacity);
+        const glowSize = 200 * densityMultiplier;
+        ambientGlow.style.setProperty('--ambient-size', glowSize + 'px');
+      }
+
+      // ----- Update smoke -----
+      function updateSmoke(timestamp) {
+        if (!isBurning) return;
+
+        const speed = 0.005 * speedMultiplier;
+        smokePhase += speed;
+
+        if (smokePhase > 1) smokePhase = 0;
+
+        // Update particle positions
+        smokeParticles.forEach((p, i) => {
+          const offset = i * 0.05;
+          const x = Math.sin((smokePhase + offset) * Math.PI * 2 + i * 0.3) * 30;
+          const y = Math.cos((smokePhase + offset) * Math.PI * 2 * 0.6 + i * 0.5) * 20 - 40;
+          const scale = 0.5 + Math.sin((smokePhase + offset) * Math.PI * 2 + i) * 0.5;
+
+          p.style.setProperty('--sx', x + 'px');
+          p.style.setProperty('--sy', y + 'px');
+          p.style.setProperty('--ss', scale);
+          p.style.setProperty('--sr', (smokePhase * 360 + i * 30) + 'deg');
+        });
+
+        // Ember glow pulse
+        const emberPulse = Math.sin(timestamp / 800) * 0.15 + 0.85;
+        emberGlow.style.transform = `translate(-50%, -50%) scale(${emberPulse})`;
+        emberGlow.style.opacity = 0.2 + Math.sin(timestamp / 600) * 0.1 + 0.1;
+      }
+
+      // ----- Burn sage -----
+      function burnSage() {
+        if (isBurning) return;
+        isBurning = true;
+
+        // Reset particles
+        smokeParticles.forEach(p => {
+          p.classList.remove('active');
+          p.style.opacity = '0';
+          p.style.transform = 'scale(0)';
+        });
+
+        smokeTrails.forEach(trail => {
+          trail.classList.remove('active');
+          trail.style.opacity = '0';
+        });
+
+        // Start smoke
+        setTimeout(() => {
+          smokeParticles.forEach((p, i) => {
+            setTimeout(() => {
+              p.classList.add('active');
+              p.style.opacity = '0.3';
+            }, i * 30 / speedMultiplier);
+          });
+        }, 200 / speedMultiplier);
+
+        // Start trails
+        setTimeout(() => {
+          smokeTrails.forEach((trail, i) => {
+            setTimeout(() => {
+              trail.classList.add('active');
+              trail.style.opacity = '0.4';
+            }, i * 100 / speedMultiplier + 500 / speedMultiplier);
+          });
+        }, 500 / speedMultiplier);
+
+        // Ambient glow
+        ambientGlow.classList.add('active');
+        ambientGlow.style.opacity = '0.3';
+
+        burnBtn.textContent = '🔥 Burning...';
+        setTimeout(() => {
+          burnBtn.textContent = '🔥 Burning Sage';
+        }, 500 / speedMultiplier);
+
+        // Auto-stop after 8 seconds
+        setTimeout(() => {
+          if (isBurning) {
+            stopBurning();
+          }
+        }, 8000 / speedMultiplier);
+      }
+
+      // ----- Stop burning -----
+      function stopBurning() {
+        isBurning = false;
+
+        smokeParticles.forEach(p => {
+          p.classList.remove('active');
+          p.style.opacity = '0';
+        });
+
+        smokeTrails.forEach(trail => {
+          trail.classList.remove('active');
+          trail.style.opacity = '0';
+        });
+
+        ambientGlow.classList.remove('active');
+        ambientGlow.style.opacity = '0';
+
+        emberGlow.style.opacity = '0.05';
+        emberGlow.style.transform = 'translate(-50%, -50%) scale(1)';
+
+        burnBtn.textContent = '🔥 Burn Sage';
+      }
+
+      // ----- Reset -----
+      function resetSmudge() {
+        if (isBurning) {
+          stopBurning();
+        }
+        isBurning = false;
+        smokePhase = 0;
+
+        smokeParticles.forEach(p => {
+          p.classList.remove('active');
+          p.style.opacity = '0';
+          p.style.transform = 'scale(0)';
+        });
+
+        smokeTrails.forEach(trail => {
+          trail.classList.remove('active');
+          trail.style.opacity = '0';
+        });
+
+        ambientGlow.classList.remove('active');
+        ambientGlow.style.opacity = '0';
+        emberGlow.style.opacity = '0.05';
+        emberGlow.style.transform = 'translate(-50%, -50%) scale(1)';
+
+        burnBtn.textContent = '🔥 Burn Sage';
+        lastTimestamp = 0;
+      }
+
+      // ----- Update speed -----
+      function updateSpeed(value) {
+        speedMultiplier = parseFloat(value);
+        applySpeed();
+      }
+
+      // ----- Update density -----
+      function updateDensity(value) {
+        densityMultiplier = parseFloat(value);
+        applyDensity();
+      }
+
+      // ----- Animation loop -----
+      function animate(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const deltaTime = Math.min((timestamp - lastTimestamp) / 16.67, 3);
+        lastTimestamp = timestamp;
+
+        updateSmoke(timestamp);
+
+        animationFrame = requestAnimationFrame(animate);
+      }
+
+      // ----- Init -----
+      function init() {
+        applySpeed();
+        applyDensity();
+
+        // Set initial state
+        smokeParticles.forEach(p => {
+          p.style.opacity = '0';
+          p.style.transform = 'scale(0)';
+        });
+        smokeTrails.forEach(trail => {
+          trail.style.opacity = '0';
+        });
+        ambientGlow.style.opacity = '0';
+        emberGlow.style.opacity = '0.05';
+
+        // Start animation
+        lastTimestamp = 0;
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        animationFrame = requestAnimationFrame(animate);
+
+        // Auto-burn after 1.5 seconds
+        setTimeout(() => {
+          burnSage();
+        }, 1500);
+
+        // Auto-stop and restart
+        setTimeout(() => {
+          resetSmudge();
+          setTimeout(() => {
+            burnSage();
+          }, 800 / speedMultiplier);
+        }, 10000 / speedMultiplier);
+      }
+
+      // ----- Event listeners -----
+      burnBtn.addEventListener('click', () => {
+        if (isBurning) {
+          stopBurning();
+        } else {
+          burnSage();
+        }
+      });
+
+      resetBtn.addEventListener('click', resetSmudge);
+      speedInput.addEventListener('input', function() {
+        updateSpeed(this.value);
+      });
+      densityInput.addEventListener('input', function() {
+        updateDensity(this.value);
+      });
+
+      window.addEventListener('beforeunload', function() {
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+      });
+
+      init();
+    })();
+  </script>
+
+</body>
+</html>
