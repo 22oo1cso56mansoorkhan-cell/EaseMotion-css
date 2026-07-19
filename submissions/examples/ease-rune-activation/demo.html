@@ -1,0 +1,465 @@
+<!-- demo.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rune Activation – EaseMotion CSS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="demo-wrapper">
+    <h1>ᚠ Rune Activation</h1>
+    <p class="subtitle">Runes lighting up in sequence</p>
+
+    <div class="ra-container">
+      <div class="ra-scene">
+        <!-- Background -->
+        <div class="bg-gradient"></div>
+
+        <!-- Rune Circle -->
+        <div class="rune-circle">
+          <!-- Rune 1 - Fehu (ᚠ) -->
+          <div class="rune rune-1" data-index="0">
+            <div class="rune-symbol">ᚠ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 2 - Uruz (ᚢ) -->
+          <div class="rune rune-2" data-index="1">
+            <div class="rune-symbol">ᚢ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 3 - Thurisaz (ᚦ) -->
+          <div class="rune rune-3" data-index="2">
+            <div class="rune-symbol">ᚦ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 4 - Ansuz (ᚨ) -->
+          <div class="rune rune-4" data-index="3">
+            <div class="rune-symbol">ᚨ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 5 - Raidho (ᚱ) -->
+          <div class="rune rune-5" data-index="4">
+            <div class="rune-symbol">ᚱ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 6 - Kaunan (ᚲ) -->
+          <div class="rune rune-6" data-index="5">
+            <div class="rune-symbol">ᚲ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 7 - Gebo (ᚷ) -->
+          <div class="rune rune-7" data-index="6">
+            <div class="rune-symbol">ᚷ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 8 - Wunjo (ᚹ) -->
+          <div class="rune rune-8" data-index="7">
+            <div class="rune-symbol">ᚹ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 9 - Hagalaz (ᚺ) -->
+          <div class="rune rune-9" data-index="8">
+            <div class="rune-symbol">ᚺ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 10 - Naudiz (ᚾ) -->
+          <div class="rune rune-10" data-index="9">
+            <div class="rune-symbol">ᚾ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 11 - Isa (ᛁ) -->
+          <div class="rune rune-11" data-index="10">
+            <div class="rune-symbol">ᛁ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Rune 12 - Jera (ᛃ) -->
+          <div class="rune rune-12" data-index="11">
+            <div class="rune-symbol">ᛃ</div>
+            <div class="rune-glow"></div>
+            <div class="rune-ring"></div>
+          </div>
+
+          <!-- Connection lines -->
+          <div class="connection-line cl1"></div>
+          <div class="connection-line cl2"></div>
+          <div class="connection-line cl3"></div>
+          <div class="connection-line cl4"></div>
+          <div class="connection-line cl5"></div>
+          <div class="connection-line cl6"></div>
+          <div class="connection-line cl7"></div>
+          <div class="connection-line cl8"></div>
+          <div class="connection-line cl9"></div>
+          <div class="connection-line cl10"></div>
+          <div class="connection-line cl11"></div>
+          <div class="connection-line cl12"></div>
+
+          <!-- Center symbol -->
+          <div class="center-symbol">ᛉ</div>
+          <div class="center-glow"></div>
+
+          <!-- Energy particles -->
+          <div class="particle p1"></div>
+          <div class="particle p2"></div>
+          <div class="particle p3"></div>
+          <div class="particle p4"></div>
+          <div class="particle p5"></div>
+          <div class="particle p6"></div>
+          <div class="particle p7"></div>
+          <div class="particle p8"></div>
+        </div>
+
+        <!-- Status text -->
+        <div class="status-text" id="statusText">ᚠ Awaiting Activation...</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="activateBtn">⚡ Activate Runes</button>
+      <button id="resetBtn">⟳ Reset</button>
+      <label>
+        Activation Speed
+        <input type="range" id="speedControl" min="0.3" max="3" step="0.1" value="1" />
+      </label>
+      <label>
+        Glow Intensity
+        <input type="range" id="intensityControl" min="0.3" max="2" step="0.05" value="1" />
+      </label>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const runes = document.querySelectorAll('.rune');
+      const connectionLines = document.querySelectorAll('.connection-line');
+      const centerSymbol = document.querySelector('.center-symbol');
+      const centerGlow = document.querySelector('.center-glow');
+      const particles = document.querySelectorAll('.particle');
+      const statusText = document.getElementById('statusText');
+
+      const activateBtn = document.getElementById('activateBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const speedInput = document.getElementById('speedControl');
+      const intensityInput = document.getElementById('intensityControl');
+
+      let speedMultiplier = 1;
+      let intensityMultiplier = 1;
+      let isActivated = false;
+      let isAnimating = false;
+      let animationFrame = null;
+      let lastTimestamp = 0;
+      let activeIndex = -1;
+      let activationInterval = null;
+      let runeOrder = [];
+
+      // Rune names for status
+      const runeNames = ['Fehu', 'Uruz', 'Thurisaz', 'Ansuz', 'Raidho', 'Kaunan', 'Gebo', 'Wunjo', 'Hagalaz', 'Naudiz', 'Isa', 'Jera'];
+
+      // ----- Apply speed -----
+      function applySpeed() {
+        const delay = 0.4 / speedMultiplier;
+
+        runes.forEach((rune, i) => {
+          const duration = (0.6 + i * 0.02) / speedMultiplier;
+          rune.style.setProperty('--rune-duration', duration + 's');
+          rune.style.setProperty('--rune-delay', ((i * 0.03) / speedMultiplier) + 's');
+        });
+
+        connectionLines.forEach((line, i) => {
+          const duration = (0.3 + i * 0.01) / speedMultiplier;
+          line.style.setProperty('--line-duration', duration + 's');
+          line.style.setProperty('--line-delay', ((i * 0.02) / speedMultiplier) + 's');
+        });
+
+        // Center glow
+        centerGlow.style.setProperty('--center-duration', (1.5 / speedMultiplier) + 's');
+
+        // Particles
+        particles.forEach((p, i) => {
+          const duration = (3 + (i % 3) * 0.3) / speedMultiplier;
+          p.style.setProperty('--particle-duration', duration + 's');
+          p.style.setProperty('--particle-delay', ((i * 0.03) / speedMultiplier) + 's');
+        });
+      }
+
+      // ----- Apply intensity -----
+      function applyIntensity() {
+        runes.forEach((rune) => {
+          const glow = rune.querySelector('.rune-glow');
+          if (glow) {
+            const opacity = Math.min(0.3 * intensityMultiplier, 0.6);
+            glow.style.setProperty('--glow-intensity', opacity);
+            const size = 60 * intensityMultiplier;
+            glow.style.setProperty('--glow-size', size + 'px');
+          }
+        });
+
+        centerGlow.style.setProperty('--center-intensity', Math.min(0.3 * intensityMultiplier, 0.6));
+
+        particles.forEach((p) => {
+          const opacity = Math.min(0.15 * intensityMultiplier, 0.3);
+          p.style.setProperty('--particle-intensity', opacity);
+        });
+      }
+
+      // ----- Activate runes -----
+      function activateRunes() {
+        if (isAnimating) return;
+        if (isActivated) {
+          resetRunes();
+          setTimeout(() => activateRunes(), 500 / speedMultiplier);
+          return;
+        }
+
+        isAnimating = true;
+        isActivated = false;
+        activeIndex = -1;
+
+        // Reset all first
+        runes.forEach(rune => {
+          rune.classList.remove('active', 'activated');
+          rune.style.opacity = '0.3';
+        });
+        connectionLines.forEach(line => {
+          line.classList.remove('active');
+          line.style.opacity = '0.05';
+        });
+        centerSymbol.classList.remove('active');
+        centerGlow.classList.remove('active');
+
+        // Shuffle rune order
+        runeOrder = Array.from({ length: runes.length }, (_, i) => i);
+        for (let i = runeOrder.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [runeOrder[i], runeOrder[j]] = [runeOrder[j], runeOrder[i]];
+        }
+
+        statusText.textContent = 'ᚠ Runes Activating...';
+
+        let current = 0;
+
+        if (activationInterval) {
+          clearInterval(activationInterval);
+          activationInterval = null;
+        }
+
+        const interval = 500 / speedMultiplier;
+
+        activationInterval = setInterval(() => {
+          if (current >= runes.length) {
+            clearInterval(activationInterval);
+            activationInterval = null;
+            isActivated = true;
+            isAnimating = false;
+            statusText.textContent = '✦ All Runes Activated! ✦';
+
+            // Activate center
+            centerSymbol.classList.add('active');
+            centerGlow.classList.add('active');
+
+            // Particle burst
+            particles.forEach(p => {
+              p.classList.add('burst');
+              setTimeout(() => {
+                p.classList.remove('burst');
+              }, 1500 / speedMultiplier);
+            });
+
+            activateBtn.textContent = '⚡ Activated!';
+            setTimeout(() => {
+              activateBtn.textContent = '⚡ Reset';
+            }, 500 / speedMultiplier);
+
+            return;
+          }
+
+          const index = runeOrder[current];
+          const rune = runes[index];
+          const line = connectionLines[current];
+
+          // Activate rune
+          rune.classList.add('active');
+          rune.style.opacity = '1';
+
+          // Activate connection line
+          if (line) {
+            line.classList.add('active');
+            line.style.opacity = '0.3';
+          }
+
+          // Update status
+          statusText.textContent = `ᚠ ${runeNames[index]} Activated (${current + 1}/${runes.length})`;
+
+          current++;
+
+        }, interval);
+
+        activateBtn.textContent = '⚡ Activating...';
+      }
+
+      // ----- Reset runes -----
+      function resetRunes() {
+        if (activationInterval) {
+          clearInterval(activationInterval);
+          activationInterval = null;
+        }
+
+        isActivated = false;
+        isAnimating = false;
+        activeIndex = -1;
+
+        runes.forEach(rune => {
+          rune.classList.remove('active', 'activated');
+          rune.style.opacity = '0.3';
+        });
+
+        connectionLines.forEach(line => {
+          line.classList.remove('active');
+          line.style.opacity = '0.05';
+        });
+
+        centerSymbol.classList.remove('active');
+        centerGlow.classList.remove('active');
+
+        particles.forEach(p => {
+          p.classList.remove('burst');
+        });
+
+        statusText.textContent = 'ᚠ Awaiting Activation...';
+        activateBtn.textContent = '⚡ Activate Runes';
+        lastTimestamp = 0;
+      }
+
+      // ----- Update speed -----
+      function updateSpeed(value) {
+        speedMultiplier = parseFloat(value);
+        applySpeed();
+        if (isAnimating) {
+          // Restart animation if running
+          resetRunes();
+          setTimeout(() => activateRunes(), 300 / speedMultiplier);
+        }
+      }
+
+      // ----- Update intensity -----
+      function updateIntensity(value) {
+        intensityMultiplier = parseFloat(value);
+        applyIntensity();
+      }
+
+      // ----- Animation loop -----
+      function animate(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const deltaTime = Math.min((timestamp - lastTimestamp) / 16.67, 3);
+        lastTimestamp = timestamp;
+
+        // Animate active runes
+        runes.forEach((rune, i) => {
+          if (rune.classList.contains('active')) {
+            const pulse = Math.sin(timestamp / 1000 + i * 0.3) * 0.1 + 0.9;
+            const symbol = rune.querySelector('.rune-symbol');
+            if (symbol) {
+              symbol.style.transform = `scale(${pulse})`;
+            }
+          }
+        });
+
+        // Center symbol pulse
+        if (centerSymbol.classList.contains('active')) {
+          const pulse = Math.sin(timestamp / 800) * 0.05 + 0.95;
+          centerSymbol.style.transform = `translate(-50%, -50%) scale(${pulse})`;
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+      }
+
+      // ----- Init -----
+      function init() {
+        resetRunes();
+
+        applySpeed();
+        applyIntensity();
+
+        // Start animation
+        lastTimestamp = 0;
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        animationFrame = requestAnimationFrame(animate);
+
+        // Auto-activate after 1.5 seconds
+        setTimeout(() => {
+          activateRunes();
+        }, 1500);
+
+        // Auto-reset and reactivate after 8 seconds
+        setTimeout(() => {
+          if (isActivated) {
+            resetRunes();
+            setTimeout(() => {
+              activateRunes();
+            }, 500 / speedMultiplier);
+          }
+        }, 8000 / speedMultiplier);
+      }
+
+      // ----- Event listeners -----
+      activateBtn.addEventListener('click', activateRunes);
+      resetBtn.addEventListener('click', resetRunes);
+      speedInput.addEventListener('input', function() {
+        updateSpeed(this.value);
+      });
+      intensityInput.addEventListener('input', function() {
+        updateIntensity(this.value);
+      });
+
+      // Click on individual rune to activate it
+      runes.forEach((rune, i) => {
+        rune.addEventListener('click', () => {
+          if (!isAnimating && !isActivated) {
+            // Activate this rune individually
+            rune.classList.toggle('active');
+            if (rune.classList.contains('active')) {
+              rune.style.opacity = '1';
+              statusText.textContent = `ᚠ ${runeNames[i]} Activated`;
+            } else {
+              rune.style.opacity = '0.3';
+              statusText.textContent = `ᚠ ${runeNames[i]} Deactivated`;
+            }
+          }
+        });
+      });
+
+      window.addEventListener('beforeunload', function() {
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        if (activationInterval) clearInterval(activationInterval);
+      });
+
+      init();
+    })();
+  </script>
+
+</body>
+</html>
