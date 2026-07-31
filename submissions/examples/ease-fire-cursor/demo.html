@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fire Cursor · Sparkler Sparks</title>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- === FIRE CURSOR === -->
+    <div class="fire-cursor" id="fireCursor"></div>
+
+    <!-- === CONTENT === -->
+    <div class="card">
+        <h2>🔥 Fire Cursor</h2>
+        <p class="sub">cursor emits sparks like a sparkler</p>
+
+        <div class="cursor-demo-area">
+            <p>Move your mouse around</p>
+            <div class="interactive-hint">
+                <i class="fas fa-mouse-pointer"></i>
+                <span>Watch the sparks fly</span>
+            </div>
+            <div class="demo-buttons">
+                <button class="demo-btn">Hover me</button>
+                <button class="demo-btn">Click me</button>
+                <button class="demo-btn">Sparks!</button>
+            </div>
+        </div>
+
+        <p style="margin-top: 1.5rem; font-size: 0.85rem; color: #64748b;">
+            Move your mouse · watch sparks fly like a sparkler
+        </p>
+    </div>
+
+    <!-- Embedded JavaScript -->
+    <script>
+        (function() {
+            'use strict';
+
+            const container = document.getElementById('fireCursor');
+            let mouseX = 0;
+            let mouseY = 0;
+            let isVisible = false;
+
+            // --- Create spark ---
+            function createSpark(x, y) {
+                const spark = document.createElement('div');
+                spark.className = 'fire-spark';
+
+                // Random size
+                const size = 2 + Math.random() * 6;
+                spark.style.width = size + 'px';
+                spark.style.height = size + 'px';
+
+                // Random color (warm tones)
+                const colors = [
+                    '#ff6b35', '#ff4500', '#ff8c00', '#ffd700',
+                    '#ff6348', '#ff4757', '#ffa502', '#f9ca24'
+                ];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                spark.style.background = `radial-gradient(circle at 30% 30%, ${color}, transparent)`;
+
+                // Random trajectory
+                const angle = Math.random() * 2 * Math.PI;
+                const speed = 30 + Math.random() * 80;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed - 20;
+
+                spark.style.left = (x + (Math.random() - 0.5) * 10) + 'px';
+                spark.style.top = (y + (Math.random() - 0.5) * 10) + 'px';
+                spark.style.setProperty('--vx', vx + 'px');
+                spark.style.setProperty('--vy', vy + 'px');
+
+                // Random glow
+                const glow = 10 + Math.random() * 30;
+                spark.style.setProperty('--glow', glow + 'px');
+
+                container.appendChild(spark);
+
+                // Remove spark after animation
+                setTimeout(() => {
+                    if (spark.parentNode) {
+                        spark.remove();
+                    }
+                }, 600 + Math.random() * 400);
+            }
+
+            // --- Create fire burst ---
+            function createFireBurst(x, y, count = 40) {
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => {
+                        const spark = document.createElement('div');
+                        spark.className = 'fire-spark';
+
+                        const size = 2 + Math.random() * 8;
+                        spark.style.width = size + 'px';
+                        spark.style.height = size + 'px';
+
+                        const colors = [
+                            '#ff6b35', '#ff4500', '#ff8c00', '#ffd700',
+                            '#ff6348', '#ff4757', '#ffa502', '#f9ca24'
+                        ];
+                        const color = colors[Math.floor(Math.random() * colors.length)];
+                        spark.style.background = `radial-gradient(circle at 30% 30%, ${color}, transparent)`;
+
+                        const angle = Math.random() * 2 * Math.PI;
+                        const speed = 40 + Math.random() * 120;
+                        const vx = Math.cos(angle) * speed;
+                        const vy = Math.sin(angle) * speed - 30;
+
+                        spark.style.left = (x + (Math.random() - 0.5) * 20) + 'px';
+                        spark.style.top = (y + (Math.random() - 0.5) * 20) + 'px';
+                        spark.style.setProperty('--vx', vx + 'px');
+                        spark.style.setProperty('--vy', vy + 'px');
+
+                        const glow = 10 + Math.random() * 40;
+                        spark.style.setProperty('--glow', glow + 'px');
+
+                        container.appendChild(spark);
+
+                        setTimeout(() => {
+                            if (spark.parentNode) {
+                                spark.remove();
+                            }
+                        }, 600 + Math.random() * 500);
+                    }, i * 20);
+                }
+            }
+
+            // --- Sparkler trail loop ---
+            let sparkInterval = null;
+
+            function startSparkler() {
+                if (sparkInterval) return;
+                sparkInterval = setInterval(() => {
+                    if (isVisible) {
+                        for (let i = 0; i < 2; i++) {
+                            const offsetX = (Math.random() - 0.5) * 8;
+                            const offsetY = (Math.random() - 0.5) * 8;
+                            createSpark(mouseX + offsetX, mouseY + offsetY);
+                        }
+                    }
+                }, 30);
+            }
+
+            function stopSparkler() {
+                if (sparkInterval) {
+                    clearInterval(sparkInterval);
+                    sparkInterval = null;
+                }
+            }
+
+            // --- Mouse move ---
+            document.addEventListener('mousemove', function(e) {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                isVisible = true;
+                container.style.display = 'block';
+            });
+
+            // --- Touch support ---
+            document.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                mouseX = touch.clientX;
+                mouseY = touch.clientY;
+                isVisible = true;
+                container.style.display = 'block';
+            }, { passive: false });
+
+            document.addEventListener('touchstart', function(e) {
+                const touch = e.touches[0];
+                mouseX = touch.clientX;
+                mouseY = touch.clientY;
+                isVisible = true;
+                container.style.display = 'block';
+            });
+
+            // --- Mouse leave ---
+            document.addEventListener('mouseleave', function() {
+                isVisible = false;
+                container.style.display = 'none';
+            });
+
+            // --- Mouse enter ---
+            document.addEventListener('mouseenter', function() {
+                isVisible = true;
+                container.style.display = 'block';
+            });
+
+            // --- Click burst ---
+            document.addEventListener('click', function(e) {
+                createFireBurst(e.clientX, e.clientY, 50);
+                console.log('🔥 Fire burst!');
+            });
+
+            // --- Hover effects ---
+            const interactiveElements = document.querySelectorAll('a, button, .demo-btn, .interactive-hint');
+            interactiveElements.forEach(el => {
+                el.addEventListener('mouseenter', function() {
+                    const rect = this.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    createFireBurst(cx, cy, 25);
+                });
+            });
+
+            // --- Start sparkler ---
+            startSparkler();
+
+            console.log('🔥 Fire cursor initialized!');
+
+        })();
+    </script>
+
+</body>
+</html>
