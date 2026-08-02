@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Light Prism – White Light Splits into Rainbow</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrapper">
+    <h1>🔦 Light Prism</h1>
+    <p class="subtitle">White light splits into a rainbow on interaction</p>
+
+    <div class="prism-container">
+      <div class="prism-scene">
+        <!-- Prism -->
+        <div class="prism" id="prism">
+          <div class="prism-body">
+            <div class="prism-face front"></div>
+            <div class="prism-face back"></div>
+            <div class="prism-face left"></div>
+            <div class="prism-face right"></div>
+            <div class="prism-face top"></div>
+            <div class="prism-face bottom"></div>
+          </div>
+          <div class="prism-glow"></div>
+        </div>
+
+        <!-- Light beam -->
+        <div class="light-beam" id="lightBeam">
+          <div class="beam-white" id="beamWhite"></div>
+          <div class="beam-rainbow" id="beamRainbow">
+            <div class="rainbow-ray" style="--hue: 0deg"></div>
+            <div class="rainbow-ray" style="--hue: 30deg"></div>
+            <div class="rainbow-ray" style="--hue: 60deg"></div>
+            <div class="rainbow-ray" style="--hue: 90deg"></div>
+            <div class="rainbow-ray" style="--hue: 120deg"></div>
+            <div class="rainbow-ray" style="--hue: 150deg"></div>
+            <div class="rainbow-ray" style="--hue: 180deg"></div>
+            <div class="rainbow-ray" style="--hue: 210deg"></div>
+            <div class="rainbow-ray" style="--hue: 240deg"></div>
+            <div class="rainbow-ray" style="--hue: 270deg"></div>
+            <div class="rainbow-ray" style="--hue: 300deg"></div>
+            <div class="rainbow-ray" style="--hue: 330deg"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info overlay -->
+      <div class="info-overlay">
+        <span class="prism-status" id="prismStatus">🔦 Idle</span>
+        <span class="color-display" id="colorDisplay">⚪ White Light</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="ctrl-btn activate" id="activateBtn">💡 Activate</button>
+      <button class="ctrl-btn toggle" id="toggleBtn">🔄 Toggle</button>
+      <button class="ctrl-btn reset" id="resetBtn">↺ Reset</button>
+      <button class="ctrl-btn rotate" id="rotateBtn">🔄 Rotate</button>
+    </div>
+
+    <!-- Sliders -->
+    <div class="slider-container">
+      <span class="slider-label">Light Intensity</span>
+      <input type="range" id="intensitySlider" min="0" max="100" value="80" />
+      <span class="slider-value" id="intensityValue">80%</span>
+    </div>
+
+    <div class="slider-container">
+      <span class="slider-label">Spread</span>
+      <input type="range" id="spreadSlider" min="20" max="100" value="60" />
+      <span class="slider-value" id="spreadValue">60%</span>
+    </div>
+
+    <div class="slider-container">
+      <span class="slider-label">Rotation</span>
+      <input type="range" id="rotationSlider" min="0" max="360" value="0" />
+      <span class="slider-value" id="rotationValue">0°</span>
+    </div>
+
+    <!-- Status -->
+    <div class="status" id="status">🔦 White light ready — click Activate to split into rainbow</div>
+
+    <!-- Keyboard shortcuts -->
+    <div class="shortcuts">
+      <kbd>Space</kbd> Toggle · <kbd>A</kbd> Activate · <kbd>R</kbd> Reset
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      "use strict";
+
+      // DOM elements
+      const prism = document.getElementById('prism');
+      const lightBeam = document.getElementById('lightBeam');
+      const beamWhite = document.getElementById('beamWhite');
+      const beamRainbow = document.getElementById('beamRainbow');
+      const prismStatus = document.getElementById('prismStatus');
+      const colorDisplay = document.getElementById('colorDisplay');
+      const activateBtn = document.getElementById('activateBtn');
+      const toggleBtn = document.getElementById('toggleBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const rotateBtn = document.getElementById('rotateBtn');
+      const status = document.getElementById('status');
+      const intensitySlider = document.getElementById('intensitySlider');
+      const intensityValue = document.getElementById('intensityValue');
+      const spreadSlider = document.getElementById('spreadSlider');
+      const spreadValue = document.getElementById('spreadValue');
+      const rotationSlider = document.getElementById('rotationSlider');
+      const rotationValue = document.getElementById('rotationValue');
+
+      // State
+      let isActive = false;
+      let isAnimating = false;
+      let animationId = null;
+      let time = 0;
+      let rotation = 0;
+      let targetRotation = 0;
+      let prismRotation = 0;
+
+      // ----- Update prism effect -----
+      function updatePrism() {
+        const intensity = parseInt(intensitySlider.value) / 100;
+        const spread = parseInt(spreadSlider.value) / 100;
+        const rot = parseInt(rotationSlider.value);
+
+        // Update light beam
+        const beamWidth = 4 + spread * 8;
+        const beamOpacity = 0.3 + intensity * 0.6;
+
+        // White beam
+        beamWhite.style.width = beamWidth + 'px';
+        beamWhite.style.opacity = isActive ? 0 : beamOpacity;
+        beamWhite.style.transform = `rotate(${rot}deg)`;
+        beamWhite.style.background = `linear-gradient(90deg, 
+          rgba(255,255,255,0), 
+          rgba(255,255,255,${beamOpacity}), 
+          rgba(255,255,255,0)
+        )`;
+
+        // Rainbow beams
+        beamRainbow.style.opacity = isActive ? beamOpacity : 0;
+        beamRainbow.style.transform = `rotate(${rot}deg)`;
+        beamRainbow.style.width = (beamWidth * 2.5) + 'px';
+
+        // Spread rainbow rays
+        const rays = beamRainbow.querySelectorAll('.rainbow-ray');
+        rays.forEach((ray, i) => {
+          const angle = (i / rays.length) * Math.PI * 2;
+          const spreadFactor = 0.5 + spread * 1.5;
+          const x = Math.sin(angle) * spreadFactor * 20;
+          const y = Math.cos(angle) * spreadFactor * 10;
+          const opacity = 0.2 + intensity * 0.6 * (0.5 + 0.5 * Math.sin(angle + time));
+          ray.style.transform = `translate(${x}px, ${y}px) scale(${0.5 + intensity * 0.5})`;
+          ray.style.opacity = isActive ? opacity : 0;
+        });
+
+        // Update prism glow
+        const glow = document.querySelector('.prism-glow');
+        if (glow) {
+          const glowIntensity = isActive ? 0.3 + intensity * 0.5 : 0.1;
+          glow.style.opacity = glowIntensity;
+          glow.style.transform = `scale(${1 + intensity * 0.2})`;
+        }
+
+        // Update prism rotation
+        prism.style.transform = `rotateY(${prismRotation}deg)`;
+
+        // Update status
+        if (isActive) {
+          prismStatus.textContent = '🌈 Active';
+          colorDisplay.textContent = '🌈 Rainbow Spectrum';
+          status.textContent = '🌈 White light split into rainbow spectrum!';
+        } else {
+          prismStatus.textContent = '🔦 Idle';
+          colorDisplay.textContent = '⚪ White Light';
+          status.textContent = '🔦 White light ready — click Activate to split into rainbow';
+        }
+
+        // Update rotation display
+        rotationValue.textContent = Math.round(rot) + '°';
+      }
+
+      // ----- Animation loop -----
+      function animate() {
+        time += 0.016;
+
+        // Smooth prism rotation
+        const diff = targetRotation - prismRotation;
+        if (Math.abs(diff) > 0.1) {
+          prismRotation += diff * 0.05;
+        } else {
+          prismRotation = targetRotation;
+        }
+
+        // Auto-rotate if active
+        if (isActive) {
+          // Slight automatic rotation for dynamic feel
+          targetRotation = parseInt(rotationSlider.value) + Math.sin(time * 0.2) * 2;
+        }
+
+        updatePrism();
+        animationId = requestAnimationFrame(animate);
+      }
+
+      // ----- Start animation -----
+      function startAnimation() {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+        animate();
+      }
+
+      // ----- Activate prism -----
+      function activatePrism() {
+        isActive = true;
+        status.textContent = '🌈 Prism activated — light splitting into rainbow!';
+        // Animate prism rotation for dramatic effect
+        targetRotation = parseInt(rotationSlider.value) + 15;
+        setTimeout(() => {
+          targetRotation = parseInt(rotationSlider.value);
+        }, 500);
+      }
+
+      // ----- Deactivate prism -----
+      function deactivatePrism() {
+        isActive = false;
+        status.textContent = '🔦 Prism deactivated — white light returns';
+        targetRotation = parseInt(rotationSlider.value);
+      }
+
+      // ----- Toggle prism -----
+      function togglePrism() {
+        if (isActive) {
+          deactivatePrism();
+        } else {
+          activatePrism();
+        }
+      }
+
+      // ----- Reset prism -----
+      function resetPrism() {
+        isActive = false;
+        prismRotation = 0;
+        targetRotation = 0;
+        intensitySlider.value = 80;
+        intensityValue.textContent = '80%';
+        spreadSlider.value = 60;
+        spreadValue.textContent = '60%';
+        rotationSlider.value = 0;
+        rotationValue.textContent = '0°';
+        status.textContent = '↺ Reset — white light ready';
+        prismStatus.textContent = '🔦 Idle';
+        colorDisplay.textContent = '⚪ White Light';
+        updatePrism();
+        setTimeout(() => {
+          status.textContent = '🔦 White light ready — click Activate to split into rainbow';
+        }, 500);
+      }
+
+      // ----- Rotate prism -----
+      function rotatePrism() {
+        const current = parseInt(rotationSlider.value);
+        const newRot = (current + 30) % 360;
+        rotationSlider.value = newRot;
+        rotationValue.textContent = newRot + '°';
+        targetRotation = newRot;
+        status.textContent = `🔄 Prism rotated to ${newRot}°`;
+      }
+
+      // ----- Event Listeners -----
+      activateBtn.addEventListener('click', activatePrism);
+      toggleBtn.addEventListener('click', togglePrism);
+      resetBtn.addEventListener('click', resetPrism);
+      rotateBtn.addEventListener('click', rotatePrism);
+
+      intensitySlider.addEventListener('input', (e) => {
+        intensityValue.textContent = e.target.value + '%';
+        updatePrism();
+      });
+
+      spreadSlider.addEventListener('input', (e) => {
+        spreadValue.textContent = e.target.value + '%';
+        updatePrism();
+      });
+
+      rotationSlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        rotationValue.textContent = val + '°';
+        targetRotation = val;
+        status.textContent = `🔄 Prism rotated to ${val}°`;
+      });
+
+      // Click on prism to toggle
+      document.querySelector('.prism-body').addEventListener('click', togglePrism);
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Space') {
+          e.preventDefault();
+          togglePrism();
+        }
+        if (e.key === 'a' || e.key === 'A') {
+          e.preventDefault();
+          activatePrism();
+        }
+        if (e.key === 'r' || e.key === 'R') {
+          e.preventDefault();
+          resetPrism();
+        }
+      });
+
+      // ----- Resize handler -----
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          // Just reflow
+        }, 200);
+      });
+
+      // ----- Init -----
+      function init() {
+        startAnimation();
+        updatePrism();
+        status.textContent = '🔦 White light ready — click Activate to split into rainbow!';
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+    })();
+  </script>
+</body>
+</html>
