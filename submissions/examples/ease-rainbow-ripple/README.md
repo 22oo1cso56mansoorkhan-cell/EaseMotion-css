@@ -68,4 +68,4 @@ this.maxRadius = Math.min(canvas.width, canvas.height) * 0.45 * (parseInt(sizeSl
 
 // In draw() method – adjust ring colors
 const hue = (this.hue + (i / ringCount) * 360) % 360;
-// Change 360 to 180 for two-color gradient, etc.
+// Change 360 to 180 for two-colorsdnkd gradient, etc.
