@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid Tail · Tail Splashes on Interaction</title>
+    <meta name="description" content="Interactive mermaid tail with iridescent scales, splashing water effects, and graceful tail movement on interaction.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🧜‍♀️ MERMAID TAIL</h1>
+        
+        <div class="canvas-wrapper">
+            <canvas id="tailCanvas" width="600" height="500"></canvas>
+            <div class="glow-overlay"></div>
+        </div>
+
+        <div class="controls">
+            <button class="toggle-btn" id="toggleBtn">⏸️ PAUSE</button>
+            <button class="reset-btn" id="resetBtn">⟳ RESET</button>
+            <div class="speed-control">
+                <label>Speed</label>
+                <input type="range" id="speedSlider" min="1" max="10" value="5">
+                <span id="speedLabel">5</span>
+            </div>
+        </div>
+
+        <div class="info">
+            <span>🧜‍♀️ MERMAID TAIL</span>
+            <small>click → splash · iridescent scales</small>
+        </div>
+        <div class="hint">
+            <span>✨ click or press space to make the tail splash!</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('tailCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = 600, H = 500;
+            
+            const toggleBtn = document.getElementById('toggleBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const speedSlider = document.getElementById('speedSlider');
+            const speedLabel = document.getElementById('speedLabel');
+
+            let isAnimating = true;
+            let speed = 5;
+            let time = 0;
+            let splashActive = false;
+            let splashTimer = 0;
+            let splashIntensity = 0;
+
+            // ---- Water Splash Particles ----
+            let splashParticles = [];
+
+            class SplashParticle {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI * 1.5;
+                    const speed = 2 + Math.random() * 6;
+                    this.vx = Math.cos(angle) * speed;
+                    this.vy = Math.sin(angle) * speed - 2;
+                    this.size = 2 + Math.random() * 6;
+                    this.life = 1;
+                    this.decay = 0.008 + Math.random() * 0.015;
+                    this.gravity = 0.08;
+                    this.color = `hsla(${190 + Math.random() * 30}, 80%, ${60 + Math.random() * 30}%, `;
+                    this.alpha = 0.6 + Math.random() * 0.4;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.vy += this.gravity;
+                    this.life -= this.decay;
+                    this.alpha = this.life * 0.8;
+                }
+
+                draw(ctx) {
+                    if (this.life <= 0) return;
+                    ctx.save();
+                    ctx.globalAlpha = this.alpha;
+                    ctx.fillStyle = this.color + this.alpha + ')';
+                    ctx.shadowColor = 'rgba(100, 200, 255, 0.2)';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            // ---- Mermaid Tail Class ----
+            class MermaidTail {
+                constructor() {
+                    this.x = W / 2;
+                    this.y = H * 0.5;
+                    this.baseY = this.y;
+                    this.tailLength = 160;
+                    this.segments = 20;
+                    
+                    // Tail movement
+                    this.wavePhase = 0;
+                    this.waveSpeed = 0.04;
+                    this.waveAmplitude = 20;
+                    
+                    // Splash
+                    this.splashAmount = 0;
+                    this.splashTarget = 0;
+                    
+                    // Colors (iridescent)
+                    this.baseHue = 200;
+                    this.scaleColors = [];
+                    for (let i = 0; i < this.segments; i++) {
+                        this.scaleColors.push({
+                            hue: this.baseHue + Math.random() * 60 - 30,
+                            sat: 60 + Math.random() * 30,
+                            light: 50 + Math.random() * 30
+                        });
+                    }
+                }
+
+                update() {
+                    const dt = speed / 5;
+                    this.wavePhase += this.waveSpeed * dt;
+                    
+                    // Smooth splash interpolation
+                    this.splashAmount += (this.splashTarget - this.splashAmount) * 0.05 * dt;
+                    
+                    // Idle sway
+                    this.x = W/2 + Math.sin(this.wavePhase * 0.3) * 10;
+                    this.y = this.baseY + Math.sin(this.wavePhase * 0.2) * 5;
+                }
+
+                draw(ctx) {
+                    const segments = this.segments;
+                    const length = this.tailLength;
+                    const splash = this.splashAmount;
+                    
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    
+                    // ---- Glow ----
+                    const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, length * 0.8);
+                    glowGrad.addColorStop(0, `hsla(${this.baseHue + 30}, 80%, 70%, 0.05)`);
+                    glowGrad.addColorStop(0.5, `hsla(${this.baseHue}, 70%, 60%, 0.03)`);
+                    glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = glowGrad;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, length * 0.8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // ---- Draw tail segments ----
+                    const points = [];
+                    const widthPoints = [];
+                    
+                    for (let i = 0; i <= segments; i++) {
+                        const t = i / segments;
+                        const angle = Math.sin(this.wavePhase + t * 3 + splash * 2) * 
+                                     (this.waveAmplitude + splash * 30) * (1 - t * 0.5);
+                        const x = t * length * 0.7;
+                        const y = t * length * 0.3 + angle * 0.5;
+                        const width = (1 - t * 0.7) * 35 + splash * 10;
+                        points.push({ x, y, width, t });
+                    }
+                    
+                    // Draw tail body (back to front for layering)
+                    for (let i = 0; i < points.length - 1; i++) {
+                        const p = points[i];
+                        const pNext = points[i + 1];
+                        const t = p.t;
+                        
+                        ctx.save();
+                        
+                        // Scale color with iridescent shimmer
+                        const color = this.scaleColors[i % this.scaleColors.length];
+                        const hue = color.hue + Math.sin(time * 0.02 + i * 0.5 + splash * 2) * 15;
+                        const sat = color.sat + Math.sin(time * 0.03 + i * 0.7) * 10;
+                        const light = color.light + Math.sin(time * 0.04 + i * 0.3 + splash) * 15;
+                        
+                        // Scale shape (rounded rectangle with tapered ends)
+                        const w = p.width * 0.7;
+                        const h = p.width * 0.9;
+                        const x = p.x;
+                        const y = p.y;
+                        
+                        // Glow on each scale
+                        ctx.shadowColor = `hsla(${hue + 30}, 100%, 70%, ${0.1 + splash * 0.1})`;
+                        ctx.shadowBlur = 15 + splash * 20;
+                        
+                        // Fill with gradient
+                        const grad = ctx.createRadialGradient(
+                            x - w * 0.2, y - h * 0.2, 0,
+                            x, y, w
+                        );
+                        grad.addColorStop(0, `hsla(${hue + 20}, ${sat + 10}%, ${light + 20}%, 0.9)`);
+                        grad.addColorStop(0.4, `hsla(${hue}, ${sat}%, ${light}%, 0.95)`);
+                        grad.addColorStop(0.8, `hsla(${hue - 20}, ${sat - 10}%, ${light - 10}%, 0.9)`);
+                        grad.addColorStop(1, `hsla(${hue - 40}, ${sat - 20}%, ${light - 20}%, 0.8)`);
+                        
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Scale highlight
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = `hsla(${hue + 40}, 100%, 90%, ${0.2 + splash * 0.1})`;
+                        ctx.beginPath();
+                        ctx.ellipse(x - w * 0.2, y - h * 0.2, w * 0.3, h * 0.2, -0.3, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        ctx.restore();
+                    }
+                    
+                    // ---- Tail fin (fluke) ----
+                    ctx.save();
+                    const finSize = 45 + splash * 15;
+                    const finWave = Math.sin(this.wavePhase + 2) * (10 + splash * 15);
+                    
+                    ctx.shadowColor = `hsla(${this.baseHue + 30}, 100%, 70%, ${0.2 + splash * 0.2})`;
+                    ctx.shadowBlur = 30 + splash * 30;
+                    
+                    // Left fin
+                    const gradFin = ctx.createRadialGradient(
+                        -20, 0, 0,
+                        -20, 0, finSize
+                    );
+                    gradFin.addColorStop(0, `hsla(${this.baseHue + 20}, 80%, 70%, 0.8)`);
+                    gradFin.addColorStop(0.5, `hsla(${this.baseHue}, 70%, 55%, 0.7)`);
+                    gradFin.addColorStop(1, `hsla(${this.baseHue - 20}, 60%, 40%, 0.5)`);
+                    ctx.fillStyle = gradFin;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.quadraticCurveTo(
+                        -finSize * 0.3,
+                        -finSize * 0.5 + finWave * 0.5,
+                        -finSize,
+                        -finSize * 0.2 + finWave
+                    );
+                    ctx.quadraticCurveTo(
+                        -finSize * 0.5,
+                        0,
+                        0,
+                        0
+                    );
+                    ctx.fill();
+                    
+                    // Right fin
+                    ctx.fillStyle = gradFin;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.quadraticCurveTo(
+                        finSize * 0.3,
+                        -finSize * 0.5 + finWave * 0.5,
+                        finSize,
+                        -finSize * 0.2 + finWave
+                    );
+                    ctx.quadraticCurveTo(
+                        finSize * 0.5,
+                        0,
+                        0,
+                        0
+                    );
+                    ctx.fill();
+                    
+                    // Fin highlights
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = `hsla(${this.baseHue + 40}, 100%, 90%, ${0.1 + splash * 0.1})`;
+                    ctx.beginPath();
+                    ctx.moveTo(-10, -5);
+                    ctx.quadraticCurveTo(-finSize * 0.4, -finSize * 0.3, -finSize * 0.7, -finSize * 0.1);
+                    ctx.strokeStyle = `hsla(${this.baseHue + 40}, 100%, 90%, ${0.2 + splash * 0.1})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(10, -5);
+                    ctx.quadraticCurveTo(finSize * 0.4, -finSize * 0.3, finSize * 0.7, -finSize * 0.1);
+                    ctx.stroke();
+                    
+                    ctx.restore();
+                    
+                    ctx.restore();
+                }
+            }
+
+            // ---- Create Tail ----
+            let tail;
+
+            function createTail() {
+                tail = new MermaidTail();
+            }
+
+            // ---- Trigger Splash ----
+            function triggerSplash() {
+                splashActive = true;
+                splashTimer = 0;
+                splashIntensity = 1;
+                tail.splashTarget = 1;
+                
+                // Create splash particles
+                const numParticles = 30 + Math.floor(Math.random() * 20);
+                const tailX = W/2;
+                const tailY = H * 0.5 + 80;
+                
+                for (let i = 0; i < numParticles; i++) {
+                    const x = tailX + (Math.random() - 0.5) * 60;
+                    const y = tailY + (Math.random() - 0.5) * 40;
+                    splashParticles.push(new SplashParticle(x, y));
+                }
+                
+                // Reset splash after delay
+                setTimeout(() => {
+                    tail.splashTarget = 0;
+                    setTimeout(() => {
+                        splashActive = false;
+                    }, 500);
+                }, 300);
+            }
+
+            // ---- Draw Background ----
+            function drawBackground() {
+                // Deep ocean gradient
+                const gradient = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W);
+                gradient.addColorStop(0, '#0d2137');
+                gradient.addColorStop(0.3, '#0a1a2a');
+                gradient.addColorStop(0.6, '#0d1a25');
+                gradient.addColorStop(0.8, '#0a1628');
+                gradient.addColorStop(1, '#050a12');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, W, H);
+                
+                // Light rays
+                for (let i = 0; i < 5; i++) {
+                    const x = 50 + i * 125 + Math.sin(time * 0.005 + i * 1.5) * 30;
+                    const gradient2 = ctx.createLinearGradient(x, 0, x + 15, H);
+                    gradient2.addColorStop(0, `rgba(100, 200, 255, ${0.015 + Math.sin(time * 0.01 + i) * 0.01})`);
+                    gradient2.addColorStop(0.5, `rgba(100, 200, 255, ${0.008})`);
+                    gradient2.addColorStop(1, 'rgba(100, 200, 255, 0)');
+                    ctx.fillStyle = gradient2;
+                    ctx.fillRect(x, 0, 15, H);
+                }
+                
+                // Bubbles
+                for (let i = 0; i < 20; i++) {
+                    const x = (i * 173 + 30) % W;
+                    const y = (i * 97 + time * (0.1 + i * 0.005) * 5) % H;
+                    const size = 1 + (i % 4) * 0.5;
+                    const alpha = 0.015 + Math.sin(time * 0.01 + i * 2) * 0.01;
+                    ctx.fillStyle = `rgba(200, 230, 255, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // ---- Animation Loop ----
+            function animate() {
+                if (!isAnimating) {
+                    requestAnimationFrame(animate);
+                    return;
+                }
+                
+                drawBackground();
+                
+                // Update splash particles
+                splashParticles = splashParticles.filter(p => p.life > 0);
+                for (let p of splashParticles) {
+                    p.update();
+                    p.draw(ctx);
+                }
+                
+                // Draw tail
+                if (tail) {
+                    tail.update();
+                    tail.draw(ctx);
+                }
+                
+                // Ambient sparkles
+                for (let i = 0; i < 15; i++) {
+                    const x = (i * 197 + 40) % W;
+                    const y = (i * 131 + time * (0.02 + i * 0.005) * 4) % H;
+                    const size = 0.5 + Math.sin(time * 0.02 + i * 3) * 0.5 + 0.5;
+                    const hue = (i * 40 + 200 + time * 5) % 360;
+                    ctx.fillStyle = `hsla(${hue}, 80%, 80%, ${0.01 + Math.sin(time * 0.015 + i) * 0.008})`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                requestAnimationFrame(animate);
+            }
+
+            // ---- Toggle Animation ----
+            function toggleAnimation() {
+                isAnimating = !isAnimating;
+                toggleBtn.textContent = isAnimating ? '⏸️ PAUSE' : '▶️ PLAY';
+            }
+
+            // ---- Reset ----
+            function resetTail() {
+                splashParticles = [];
+                createTail();
+                tail.splashTarget = 0;
+                splashActive = false;
+                time = 0;
+            }
+
+            // ---- Speed Control ----
+            speedSlider.addEventListener('input', function() {
+                speed = parseInt(this.value);
+                speedLabel.textContent = speed;
+            });
+
+            // ---- Event Listeners ----
+            toggleBtn.addEventListener('click', toggleAnimation);
+            resetBtn.addEventListener('click', resetTail);
+            canvas.addEventListener('click', triggerSplash);
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                triggerSplash();
+            });
+
+            // ---- Keyboard Shortcuts ----
+            document.addEventListener('keydown', function(e) {
+                if (e.key === ' ' || e.key === 'Space') {
+                    e.preventDefault();
+                    triggerSplash();
+                }
+                if (e.key === 'r' || e.key === 'R') {
+                    resetTail();
+                }
+            });
+
+            // ---- Initialize ----
+            createTail();
+            animate();
+
+            console.log('🧜‍♀️ Mermaid Tail · Click or press Space to make the tail splash!');
+        })();
+    </script>
+</body>
+</html>
