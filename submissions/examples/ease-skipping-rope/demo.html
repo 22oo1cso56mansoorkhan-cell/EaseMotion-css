@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skipping Rope · Rope Swings in Arc</title>
+    <meta name="description" content="Interactive skipping rope with realistic rope physics, arc swing, and jump timing.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🪢 SKIPPING ROPE</h1>
+        
+        <div class="canvas-wrapper">
+            <canvas id="ropeCanvas" width="600" height="500"></canvas>
+            <div class="glow-overlay"></div>
+        </div>
+
+        <div class="controls">
+            <div class="button-group">
+                <button class="start-btn" id="startBtn">🔄 START</button>
+                <button class="stop-btn" id="stopBtn">⏹️ STOP</button>
+                <button class="reset-btn" id="resetBtn">⟳ RESET</button>
+                <button class="toggle-btn" id="toggleBtn">⏸️ PAUSE</button>
+            </div>
+            <div class="speed-control">
+                <label>Speed</label>
+                <input type="range" id="speedSlider" min="1" max="10" value="5">
+                <span id="speedLabel">5</span>
+                <label>Jump</label>
+                <input type="range" id="jumpSlider" min="1" max="10" value="5">
+                <span id="jumpLabel">5</span>
+            </div>
+        </div>
+
+        <div class="info">
+            <span>🪢 SKIPPING ROPE</span>
+            <small>swing · arc · jump</small>
+        </div>
+        <div class="hint">
+            <span>🔄 click to start the rope swinging — time your jumps!</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('ropeCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = 600, H = 500;
+            
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const toggleBtn = document.getElementById('toggleBtn');
+            const speedSlider = document.getElementById('speedSlider');
+            const speedLabel = document.getElementById('speedLabel');
+            const jumpSlider = document.getElementById('jumpSlider');
+            const jumpLabel = document.getElementById('jumpLabel');
+
+            let isAnimating = true;
+            let speed = 5;
+            let jumpHeight = 5;
+            let time = 0;
+            let isRopeSwinging = false;
+            let ropeAngle = 0;
+            let ropeSpeed = 0.04;
+            
+            // ---- Jumper ----
+            let jumper = {
+                x: W / 2,
+                y: H - 80,
+                groundY: H - 80,
+                velocity: 0,
+                isJumping: false,
+                jumpCount: 0,
+                size: 30
+            };
+
+            // ---- Rope Points ----
+            let ropePoints = [];
+
+            // ---- Start Rope ----
+            function startRope() {
+                isRopeSwinging = true;
+                ropeAngle = 0;
+                if (ropeSpeed < 0.01) ropeSpeed = 0.04;
+            }
+
+            // ---- Stop Rope ----
+            function stopRope() {
+                isRopeSwinging = false;
+            }
+
+            // ---- Reset ----
+            function resetRope() {
+                isRopeSwinging = false;
+                ropeAngle = 0;
+                jumper.y = jumper.groundY;
+                jumper.velocity = 0;
+                jumper.isJumping = false;
+                jumper.jumpCount = 0;
+                ropePoints = [];
+                time = 0;
+            }
+
+            // ---- Jump ----
+            function jump() {
+                if (jumper.isJumping) return;
+                const jumpPower = 4 + jumpHeight * 0.4;
+                jumper.velocity = -jumpPower;
+                jumper.isJumping = true;
+            }
+
+            // ---- Update Physics ----
+            function updatePhysics() {
+                const dt = 0.02 * (speed / 5);
+                const ropeSpeedVal = 0.02 + (speed / 10) * 0.06;
+                
+                // Update rope
+                if (isRopeSwinging) {
+                    ropeAngle += ropeSpeedVal * dt * 20;
+                    if (ropeAngle > Math.PI * 2) {
+                        ropeAngle -= Math.PI * 2;
+                        // Check if rope passed under feet
+                        if (ropeAngle > Math.PI * 0.8 && ropeAngle < Math.PI * 1.2) {
+                            // Rope at bottom
+                        }
+                    }
+                }
+                
+                // Update jumper
+                if (jumper.isJumping) {
+                    const gravity = 0.3 + (10 - jumpHeight) * 0.02;
+                    jumper.velocity += gravity * dt * 20;
+                    jumper.y += jumper.velocity * dt * 2;
+                    
+                    if (jumper.y >= jumper.groundY) {
+                        jumper.y = jumper.groundY;
+                        jumper.velocity = 0;
+                        jumper.isJumping = false;
+                        jumper.jumpCount++;
+                    }
+                }
+                
+                // Check if rope hits jumper
+                if (isRopeSwinging && !jumper.isJumping) {
+                    const ropeBottom = Math.sin(ropeAngle) * 200;
+                    if (ropeBottom > 0 && ropeBottom < 50) {
+                        // Rope at bottom, jumper should jump
+                        // Auto-jump for demo or user-timed
+                    }
+                }
+            }
+
+            // ---- Generate Rope Points ----
+            function generateRopePoints() {
+                ropePoints = [];
+                const segments = 30;
+                const ropeLength = 220;
+                const startX = W / 2 - 120;
+                const endX = W / 2 + 120;
+                const startY = 80;
+                const endY = 80;
+                
+                // Rope arc based on angle
+                const swing = Math.sin(ropeAngle) * 1.2;
+                const arcHeight = 80 + Math.sin(ropeAngle) * 60;
+                
+                for (let i = 0; i <= segments; i++) {
+                    const t = i / segments;
+                    const x = startX + (endX - startX) * t;
+                    
+                    // Parabolic arc
+                    const baseY = startY + t * (endY - startY);
+                    const arcOffset = Math.sin(t * Math.PI) * arcHeight;
+                    const swingOffset = Math.sin(t * Math.PI + ropeAngle * 0.5) * 20 * swing;
+                    
+                    let y = baseY + arcOffset + swingOffset;
+                    
+                    // Rope sag at bottom
+                    if (swing > 0.5) {
+                        const sag = Math.sin(t * Math.PI) * 30 * (swing - 0.5) * 0.5;
+                        y += sag;
+                    }
+                    
+                    ropePoints.push({ x, y });
+                }
+            }
+
+            // ---- Render ----
+            function render() {
+                // Background
+                const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W);
+                grad.addColorStop(0, '#0d1a2a');
+                grad.addColorStop(0.3, '#0a1520');
+                grad.addColorStop(0.6, '#080e18');
+                grad.addColorStop(0.8, '#060a12');
+                grad.addColorStop(1, '#040608');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, W, H);
+                
+                // Grid
+                ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < 20; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * 30, 0);
+                    ctx.lineTo(i * 30, H);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * 30);
+                    ctx.lineTo(W, i * 30);
+                    ctx.stroke();
+                }
+                
+                // Ground
+                ctx.fillStyle = 'rgba(100, 200, 255, 0.02)';
+                ctx.fillRect(0, H - 30, W, 30);
+                ctx.strokeStyle = 'rgba(100, 200, 255, 0.05)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, H - 30);
+                ctx.lineTo(W, H - 30);
+                ctx.stroke();
+                
+                // Rope handles
+                const handleY = 80;
+                ctx.save();
+                ctx.fillStyle = 'rgba(200, 220, 240, 0.1)';
+                ctx.shadowColor = 'rgba(100, 200, 255, 0.05)';
+                ctx.shadowBlur = 10;
+                for (let side = -1; side <= 1; side += 2) {
+                    const hx = W/2 + side * 120;
+                    ctx.fillRect(hx - 8, handleY - 8, 16, 16);
+                    ctx.fillStyle = 'rgba(200, 220, 240, 0.05)';
+                    ctx.fillRect(hx - 4, handleY + 8, 8, 12);
+                }
+                ctx.restore();
+                
+                // Rope
+                generateRopePoints();
+                if (ropePoints.length > 1) {
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(100, 200, 255, 0.1)';
+                    ctx.shadowBlur = 15;
+                    ctx.strokeStyle = 'rgba(200, 220, 240, 0.5)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(ropePoints[0].x, ropePoints[0].y);
+                    for (let i = 1; i < ropePoints.length; i++) {
+                        ctx.lineTo(ropePoints[i].x, ropePoints[i].y);
+                    }
+                    ctx.stroke();
+                    
+                    // Glow rope
+                    ctx.shadowBlur = 30;
+                    ctx.strokeStyle = 'rgba(100, 200, 255, 0.1)';
+                    ctx.lineWidth = 6;
+                    ctx.beginPath();
+                    ctx.moveTo(ropePoints[0].x, ropePoints[0].y);
+                    for (let i = 1; i < ropePoints.length; i++) {
+                        ctx.lineTo(ropePoints[i].x, ropePoints[i].y);
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                
+                // Jumper
+                const jx = jumper.x;
+                const jy = jumper.y;
+                const size = jumper.size;
+                const isJumping = jumper.isJumping;
+                
+                ctx.save();
+                ctx.translate(jx, jy);
+                
+                // Shadow
+                ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 4;
+                
+                // Body
+                const bodyGrad = ctx.createRadialGradient(
+                    -size * 0.1, -size * 0.1, 0,
+                    0, 0, size
+                );
+                bodyGrad.addColorStop(0, '#e8e0d5');
+                bodyGrad.addColorStop(0.4, '#d4c8b8');
+                bodyGrad.addColorStop(0.8, '#b8a898');
+                bodyGrad.addColorStop(1, '#9a8a7a');
+                ctx.fillStyle = bodyGrad;
+                ctx.shadowColor = 'rgba(100, 200, 255, 0.05)';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(0, 0, size * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Head
+                ctx.shadowBlur = 5;
+                ctx.fillStyle = '#e8e0d5';
+                ctx.beginPath();
+                ctx.arc(0, -size * 0.55, size * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Hair
+                ctx.fillStyle = 'rgba(60, 50, 40, 0.3)';
+                ctx.beginPath();
+                ctx.arc(0, -size * 0.7, size * 0.25, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Eyes
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#1a1a2e';
+                ctx.beginPath();
+                ctx.arc(-size * 0.1, -size * 0.55, size * 0.04, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(size * 0.1, -size * 0.55, size * 0.04, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Smile
+                ctx.strokeStyle = 'rgba(60, 50, 40, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(0, -size * 0.45, size * 0.08, 0.1, Math.PI - 0.1);
+                ctx.stroke();
+                
+                // Arms (raised when jumping)
+                if (isJumping) {
+                    ctx.strokeStyle = '#d4c8b8';
+                    ctx.lineWidth = 3;
+                    for (let side = -1; side <= 1; side += 2) {
+                        ctx.beginPath();
+                        ctx.moveTo(side * size * 0.3, -size * 0.2);
+                        ctx.quadraticCurveTo(side * size * 0.7, -size * 0.6 + Math.abs(side) * size * 0.1, 
+                                            side * size * 0.5, -size * 0.8);
+                        ctx.stroke();
+                    }
+                }
+                
+                ctx.restore();
+                
+                // Status info
+                ctx.save();
+                ctx.fillStyle = 'rgba(200, 220, 240, 0.2)';
+                ctx.font = '13px monospace';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(`Jumps: ${jumper.jumpCount}`, W - 20, H - 10);
+                
+                ctx.textAlign = 'left';
+                const status = isRopeSwinging ? '🔄 SWINGING' : '⏸️ STOPPED';
+                ctx.fillText(status, 20, H - 10);
+                
+                if (isRopeSwinging) {
+                    const angleDeg = ((ropeAngle % (Math.PI * 2)) / Math.PI * 180).toFixed(0);
+                    ctx.fillText(`Angle: ${angleDeg}°`, 20, H - 30);
+                }
+                ctx.restore();
+            }
+
+            // ---- Animation Loop ----
+            function animate() {
+                if (!isAnimating) {
+                    requestAnimationFrame(animate);
+                    return;
+                }
+                
+                time += 0.01;
+                
+                updatePhysics();
+                render();
+                
+                requestAnimationFrame(animate);
+            }
+
+            // ---- Toggle Animation ----
+            function toggleAnimation() {
+                isAnimating = !isAnimating;
+                toggleBtn.textContent = isAnimating ? '⏸️ PAUSE' : '▶️ PLAY';
+            }
+
+            // ---- Update Labels ----
+            speedSlider.addEventListener('input', function() {
+                speedLabel.textContent = this.value;
+            });
+            jumpSlider.addEventListener('input', function() {
+                jumpHeight = parseInt(this.value);
+                jumpLabel.textContent = this.value;
+            });
+
+            // ---- Event Listeners ----
+            startBtn.addEventListener('click', startRope);
+            stopBtn.addEventListener('click', stopRope);
+            resetBtn.addEventListener('click', resetRope);
+            toggleBtn.addEventListener('click', toggleAnimation);
+
+            // ---- Keyboard Shortcuts ----
+            document.addEventListener('keydown', function(e) {
+                if (e.key === ' ' || e.key === 'Space') {
+                    e.preventDefault();
+                    if (!isRopeSwinging) {
+                        startRope();
+                    } else {
+                        jump();
+                    }
+                }
+                if (e.key === 's' || e.key === 'S') {
+                    stopRope();
+                }
+                if (e.key === 'r' || e.key === 'R') {
+                    resetRope();
+                }
+                if (e.key === 'p' || e.key === 'P') {
+                    toggleAnimation();
+                }
+            });
+
+            // ---- Initialize ----
+            render();
+            animate();
+
+            console.log('🪢 Skipping Rope · Click Start to swing the rope, Space to jump!');
+        })();
+    </script>
+</body>
+</html>
